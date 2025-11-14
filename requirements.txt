@@ -4,4 +4,4 @@ pillow
 numpy
 opencv-python-headless
 facefusion 
-git+https://github.com/facefusion/facefusion/archive/refs/heads/master.zip
+git+https://github.com/facefusion/facefusion.git
