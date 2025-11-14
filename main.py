@@ -1,14 +1,14 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, File, UploadFile
 from faceswap_engine import swap_face
 
 app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"status": "ok", "message": "FaceSwap API running"}
+    return {"status": "ok"}
 
 @app.post("/swap")
-async def swap(
+async def swap_faces(
     source_image: UploadFile = File(...),
     target_image: UploadFile = File(...)
 ):
