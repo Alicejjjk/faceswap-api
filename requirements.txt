@@ -1,5 +1,4 @@
 fastapi
 uvicorn
-opencv-python
+opencv-python-headless  # 使用轻量版的 opencv
 numpy
-dlib  # 需要安装 Dlib 库
