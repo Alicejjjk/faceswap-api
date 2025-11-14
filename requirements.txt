@@ -3,4 +3,4 @@ uvicorn
 pillow
 numpy
 opencv-python-headless
-git+https://github.com/facefusion/facefusion.git
+deepface  # 或者 insightface
