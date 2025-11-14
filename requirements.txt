@@ -3,5 +3,4 @@ uvicorn
 pillow
 numpy
 opencv-python-headless
-facefusion 
 git+https://github.com/facefusion/facefusion.git
