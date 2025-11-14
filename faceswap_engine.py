@@ -1,74 +1,56 @@
-import io
-from PIL import Image
 import numpy as np
+from PIL import Image
+import io
 import base64
+import insightface
+from insightface.app import FaceAnalysis
+from insightface.model_zoo import model_zoo
 import cv2
-from huggingface_hub import hf_hub_download
 
-# 使用轻量模型：sface（4MB）
-# 免费 Render 可运行
-MODEL_REPO = "serengil/deepface"
-MODEL_FILE = "SFace/SFace.pb"
-
-import tensorflow as tf
-
-# 下载轻量级模型（仅一次）
-model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
-model = tf.saved_model.load(model_path)
-
-
-def read_image(bytes_data):
-    return Image.open(io.BytesIO(bytes_data)).convert("RGB")
-
-
-def img_to_base64(img):
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG")
-    return base64.b64encode(buf.getvalue()).decode()
-
-
-def align_face(image):
-    """轻量级人脸对齐（不依赖 heavy 模型）"""
-    import face_recognition
-
-    face_locations = face_recognition.face_locations(image)
-
-    if len(face_locations) == 0:
-        return None, None
-
-    top, right, bottom, left = face_locations[0]
-    face_img = image[top:bottom, left:right]
-    return face_img, (top, right, bottom, left)
+# 初始化人脸检测器和换脸模型
+app = FaceAnalysis(name="buffalo_l", providers=['CPUExecutionProvider'])
+app.prepare(ctx_id=0, det_size=(640, 640))
+swapper = model_zoo.get_model('inswapper_128.onnx', providers=['CPUExecutionProvider'])
 
 
 def swap_face(source_bytes, target_bytes):
     try:
-        # 转为 numpy
-        src = np.array(read_image(source_bytes))
-        tgt = np.array(read_image(target_bytes))
+        # 读取图片
+        source_img = Image.open(io.BytesIO(source_bytes)).convert("RGB")
+        target_img = Image.open(io.BytesIO(target_bytes)).convert("RGB")
 
-        # 检测 + 裁剪
-        src_face, _ = align_face(src)
-        tgt_face, tgt_box = align_face(tgt)
+        # 转为 numpy 数组
+        source_np = np.array(source_img)
+        target_np = np.array(target_img)
 
-        if src_face is None or tgt_face is None:
-            return {"error": "无法检测到人脸"}
+        # 检测人脸
+        source_faces = app.get(source_np)
+        target_faces = app.get(target_np)
 
-        # resize，人脸融合
-        src_face = cv2.resize(src_face, (tgt_face.shape[1], tgt_face.shape[0]))
+        if len(source_faces) == 0:
+            return {"error": "未检测到 source 图像的人脸"}
 
-        # α 融合（轻量版，不依赖沉重模型）
-        blended = cv2.addWeighted(src_face, 0.9, tgt_face, 0.1, 0)
+        if len(target_faces) == 0:
+            return {"error": "未检测到 target 图像的人脸"}
 
-        # 把 blended 放回 target
-        top, right, bottom, left = tgt_box
-        tgt[top:bottom, left:right] = blended
+        source_face = source_faces[0]
+        target_face = target_faces[0]
 
-        out_img = Image.fromarray(tgt)
+        # 人脸替换
+        swapped = swapper.get(target_np, target_face, source_face)
+
+        # 输出为图片格式
+        output_img = Image.fromarray(swapped)
+        buf = io.BytesIO()
+        output_img.save(buf, format="JPEG")
+        img_bytes = buf.getvalue()
+
+        # 将图片转换为 Base64 格式
+        img_base64 = base64.b64encode(img_bytes).decode("utf-8")
 
         return {
-            "result_base64": img_to_base64(out_img),
-            "status": "success"
+            "result_base64": img_base64,
+            "note": "success"
         }
 
     except Exception as e:
