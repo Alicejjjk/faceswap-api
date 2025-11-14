@@ -3,6 +3,4 @@ uvicorn
 pillow
 numpy
 opencv-python-headless
-insightface==0.7.3
-onnxruntime
-huggingface_hub
+facefusion
