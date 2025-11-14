@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import base64
 
 # 使用 OpenCV 的 haarcascade_frontalface_default.xml 来替代 dlib
 def face_swap(source_bytes, target_bytes):
@@ -26,8 +27,11 @@ def face_swap(source_bytes, target_bytes):
         source_face = source_image[y1:y1+h1, x1:x1+w1]
         target_image[y2:y2+h2, x2:x2+w2] = cv2.resize(source_face, (w2, h2))
 
-        # 保存换脸后的图片
+        # 将处理后的图片转为 base64 格式
         _, swapped_image = cv2.imencode('.jpg', target_image)
-        return swapped_image.tobytes()
+        swapped_image_base64 = base64.b64encode(swapped_image.tobytes()).decode('utf-8')
+
+        # 返回 base64 编码的图片
+        return {"result_base64": swapped_image_base64}
 
     return {"error": "No faces detected in one or both images"}
