@@ -3,6 +3,6 @@ uvicorn
 pillow
 numpy
 opencv-python-headless
-face_recognition
-tensorflow-cpu==2.12
+insightface==0.7.3
+onnxruntime
 huggingface_hub
