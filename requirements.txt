@@ -1,6 +1,5 @@
 fastapi
 uvicorn
-pillow
+opencv-python
 numpy
-opencv-python-headless
-deepface  # 或者 insightface
+dlib  # 需要安装 Dlib 库
